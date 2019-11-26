@@ -8,12 +8,16 @@ var renderer = new THREE.WebGLRenderer();
 renderer.setSize( showWidth, showHeight);
 show.appendChild( renderer.domElement );
 
-var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+var geometry = new THREE.BoxGeometry( 30, 30, 30 );
+var material = new THREE.MeshPhongMaterial({color: 0xffff00});
 var cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 
-camera.position.z = 5;
+var light = new THREE.PointLight( 0xffffff, 1, 1000 );
+light.position.set( 50, 50, 50 );
+scene.add( light );
+
+camera.position.z = 50;
 
 var animate = function () {
     requestAnimationFrame( animate );
