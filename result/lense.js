@@ -62,12 +62,12 @@ function init()
 	var onError = function ( xhr ) { };
 
 	var mtlLoader = new THREE.MTLLoader();
-		mtlLoader.setPath( '/images/' );
+		mtlLoader.setPath( './images/' );
 		mtlLoader.load( 'penguin.mtl', function( materials ) {
 			materials.preload();
 			var objLoader = new THREE.OBJLoader();
 			objLoader.setMaterials( materials );
-			objLoader.setPath( '/images/' );
+			objLoader.setPath( './images/' );
 			objLoader.load( 'penguin.obj', function ( object ) {
 				object.position.z = -400;
 				object.position.y = -50;
