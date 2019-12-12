@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>lense</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+</head>
+<body>
+
+<script src="./three.js"></script>
+<script src="./OrbitControls.js"></script>
+<script src="./shader.js"></script>
+
+<script src="./DDSLoader.js"></script>
+<script src="./MTLLoader.js"></script>
+<script src="./OBJLoader.js"></script>
+
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+
+<script>
+// standard global variables
+var container, camera, renderer, controls, lense1, lense2;
+var clock = new THREE.Clock();
+
+init();
+animate();
+
+// FUNCTIONS 		
+function init() 
+{
+	// SCENE
+	scene = new THREE.Scene();
+	// CAMERA
+	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+	scene.add(camera);
+	camera.position.set(0, 0, 400);
+	camera.lookAt(scene.position);	
+	// RENDERER
+	renderer = new THREE.WebGLRenderer( {antialias:true} );
+	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	container = document.getElementById( 'ThreeJS' );
+	container.appendChild( renderer.domElement );
+	// CONTROLS
+	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	// LIGHT
+	var light = new THREE.PointLight(0xffffff);
+	light.position.set(0,250,0);
+	scene.add(light);
+	// SKYBOX
+	var imagePrefix = "./bridge/";
+	var directions  = ["posx", "negx", "posy", "negy", "posz", "negz"];
+	var imageSuffix = ".jpg";
+	var skyGeometry = new THREE.CubeGeometry( 5000, 5000, 5000 );	
+	var urls = [];
+	for (var i = 0; i < 6; i++)
+		urls.push( imagePrefix + directions[i] + imageSuffix );
+	
+	var materialArray = [];
+	for (var i = 0; i < 6; i++)
+		materialArray.push( new THREE.MeshBasicMaterial({
+			map: new THREE.TextureLoader().load( imagePrefix + directions[i] + imageSuffix ),
+			side: THREE.BackSide
+		}));
+	var skyMaterial = new THREE.MeshFaceMaterial( materialArray );//fix
+	var skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
+	scene.add( skyBox );
+	// PENGUIN
+	var onProgress = function ( xhr ) {
+		if ( xhr.lengthComputable ) {
+			var percentComplete = xhr.loaded / xhr.total * 100;
+			console.log( Math.round(percentComplete, 2) + '% downloaded' );
+		}
+	};
+	var onError = function ( xhr ) { };
+
+	var mtlLoader = new THREE.MTLLoader();
+		mtlLoader.setPath( './' );
+		mtlLoader.load( 'penguin.mtl', function( materials ) {
+			materials.preload();
+			var objLoader = new THREE.OBJLoader();
+			objLoader.setMaterials( materials );
+			objLoader.setPath( './' );
+			objLoader.load( 'penguin.obj', function ( object ) {
+				object.position.z = -500;
+				object.position.y = -50;
+				object.rotation.x = -Math.PI/2;
+				scene.add( object );
+			}, onProgress, onError );
+		});
+	// LENSE
+	this.refractSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+	scene.add( refractSphereCamera );
+
+	// create custom material for the shader
+	var fShader = THREE.FresnelShader;
+
+	refractSphereCamera.renderTarget.texture.mapping = THREE.CubeRefractionMapping;
+	var fresnelUniforms = 
+	{
+		"mRefractionRatio": { type: "f", value: 1.02 },
+		"mFresnelBias": 	{ type: "f", value: 0.1 },
+		"mFresnelPower": 	{ type: "f", value: 2.0 },
+		"mFresnelScale": 	{ type: "f", value: 1.0 },
+		"tCube": 			{ type: "t", value: refractSphereCamera.renderTarget.texture} //  textureCube
+	};
+	var customMaterial = new THREE.ShaderMaterial( 
+	{
+	    uniforms: 		fresnelUniforms,
+		vertexShader:   fShader.vertexShader,
+		fragmentShader: fShader.fragmentShader
+	}   );
+
+	// LENSE FORM
+	var radius = 100
+	var d = 40
+	var angle = Math.acos((radius - d)/radius)
+	var touch = radius - d;
+
+	var geometry1 = new THREE.SphereBufferGeometry( radius, 32, 32, 0, Math.PI * 2, 0, angle);
+	lense1 = new THREE.Mesh(geometry1, customMaterial)
+	lense1.rotation.x = Math.PI/2;
+	lense1.position.z = 100 - touch;
+	lense1.position.y = 50;
+	scene.add(lense1)
+
+	var geometry2 = new THREE.SphereBufferGeometry( radius, 32, 32, 0, Math.PI * 2, 0, angle);
+	lense2 = new THREE.Mesh(geometry2, customMaterial)
+	lense2.rotation.x = -Math.PI/2;
+	lense2.position.z = 100 + touch;
+	lense2.position.y = 50;
+	scene.add(lense2)
+}
+
+function animate() 
+{
+    requestAnimationFrame( animate );
+	render();		
+	update();
+}
+
+function update()
+{	
+	controls.update();
+}
+
+function render() 
+{
+	lense1.visible = false;
+	lense2.visible = false;
+	refractSphereCamera.update( renderer, scene );
+	lense1.visible = true;
+	lense2.visible = true;
+	
+	renderer.render( scene, camera );
+}
+
+</script>
+
+</body>
+</html>
