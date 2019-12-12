@@ -122,14 +122,12 @@ function init()
 	lense1 = new THREE.Mesh(geometry1, customMaterial)
 	lense1.rotation.x = Math.PI/2;
 	lense1.position.z = 100 - touch;
-	lense1.position.y = 50;
 	scene.add(lense1)
 
 	var geometry2 = new THREE.SphereBufferGeometry( radius, 32, 32, 0, Math.PI * 2, 0, angle);
 	lense2 = new THREE.Mesh(geometry2, customMaterial)
 	lense2.rotation.x = -Math.PI/2;
 	lense2.position.z = 100 + touch;
-	lense2.position.y = 50;
 	scene.add(lense2)
 }
 

@@ -57,12 +57,12 @@ THREE.FresnelShader = {
 
 		"void main() {",
 
-		"	vec4 reflectedColor = textureCube( tCube, vec3( vReflect.x, vReflect.yz ) );",
+		"	vec4 reflectedColor = textureCube( tCube, vec3( vReflect.x, vReflect.y, vReflect.z ) );",
 		"	vec4 refractedColor = vec4( 1.0 );",
 
-		"	refractedColor.r = textureCube( tCube, vec3( vRefract[0].x, vRefract[0].yz ) ).r;",
-		"	refractedColor.g = textureCube( tCube, vec3( vRefract[1].x, vRefract[1].yz ) ).g;",
-		"	refractedColor.b = textureCube( tCube, vec3( vRefract[2].x, vRefract[2].yz ) ).b;",
+		"	refractedColor.r = textureCube( tCube, vec3( vRefract[0].x, -vRefract[0].y, vRefract[0].z ) ).r;",
+		"	refractedColor.g = textureCube( tCube, vec3( vRefract[1].x, -vRefract[1].y, vRefract[1].z ) ).g;",
+		"	refractedColor.b = textureCube( tCube, vec3( vRefract[2].x, -vRefract[2].y, vRefract[2].z ) ).b;",
 
 		"	gl_FragColor = mix( refractedColor, reflectedColor, clamp( vReflectionFactor, 0.0, 1.0 ) );",
 
