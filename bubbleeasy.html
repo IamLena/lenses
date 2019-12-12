@@ -15,7 +15,8 @@
 
 <script src="/three.js-master/build/three.js"></script>
 <script src="/three.js-master/examples/js/controls/OrbitControls.js"></script>
-<script src="/three.js-master/examples/js/shaders/FresnelShader.js"></script>
+<!-- <script src="/three.js-master/examples/js/shaders/FresnelShader.js"></script> -->
+<script src="./fresnelshaderCOPY.js"></script>
 
 <script src="/three.js-master/examples/js/loaders/DDSLoader.js"></script>
 <script src="/three.js-master/examples/js/loaders/MTLLoader.js"></script>
@@ -24,11 +25,8 @@
 <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
 
 <script>
-
-// MAIN
-
 // standard global variables
-var container, scene, camera, renderer, controls;
+var container, scene, camera, renderer, controls, obj, obj1;
 var clock = new THREE.Clock();
 // custom global variables
 var cube;
@@ -46,34 +44,19 @@ function init()
 	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
-	camera.position.set(0,150,400);
+	camera.position.set(0, 0,400);
 	camera.lookAt(scene.position);	
 	// RENDERER
 	renderer = new THREE.WebGLRenderer( {antialias:true} );
 	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	container = document.getElementById( 'ThreeJS' );
 	container.appendChild( renderer.domElement );
-	// EVENTS
-	// THREEx.WindowResize(renderer, camera);
-	// THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
 	// CONTROLS
 	controls = new THREE.OrbitControls( camera, renderer.domElement );
-
 	// LIGHT
 	var light = new THREE.PointLight(0xffffff);
 	light.position.set(0,250,0);
 	scene.add(light);
-	// FLOOR
-	// var floorTexture = new THREE.TextureLoader().load( 'images/checkerboard.jpg' );
-	// floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
-	// floorTexture.repeat.set( 10, 10 );
-	// var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
-	// var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-	// var floor = new THREE.Mesh(floorGeometry, floorMaterial);
-	// floor.position.y = -50.5;
-	// floor.rotation.x = Math.PI / 2;
-	// scene.add(floor);
-
 	// SKYBOX
 	var imagePrefix = "three.js-master/examples/textures/cube/Bridge2/";
 	var directions  = ["posx", "negx", "posy", "negy", "posz", "negz"];
@@ -89,12 +72,10 @@ function init()
 			map: new THREE.TextureLoader().load( imagePrefix + directions[i] + imageSuffix ),
 			side: THREE.BackSide
 		}));
-	var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+	var skyMaterial = new THREE.MeshFaceMaterial( materialArray );//fix
 	var skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
 	scene.add( skyBox );
-
-
-	//penguin
+	// PENGUIN
 	var onProgress = function ( xhr ) {
 		if ( xhr.lengthComputable ) {
 			var percentComplete = xhr.loaded / xhr.total * 100;
@@ -112,87 +93,71 @@ function init()
 			objLoader.setPath( '/images/' );
 			objLoader.load( 'penguin.obj', function ( object ) {
 				// object.position.y = 100;
-				object.position.x = 200;
-				object.position.z = 0;
+				object.position.z = -500;
+				object.position.y = -50;
 				object.rotation.x = -Math.PI/2;
 				scene.add( object );
 			}, onProgress, onError );
 		});
-	
-	////////////
-	// CUSTOM //
-	////////////
-	
-	// LENSE FORM
-	// create a simple square shape. We duplicate the top left and bottom right
-	// vertices because each vertex needs to appear once per triangle.
-
-	var radius = 100
-	var d = 10
-	var angle = Math.acos((radius - d)/radius)
-	var touch = radius - d;
-
-	var geometry1 = new THREE.SphereBufferGeometry( radius, 32, 32, 0, Math.PI * 2, 0, angle);
-	var m1 = new THREE.MeshBasicMaterial({color: 0xff00ff})
-	var obj = new THREE.Mesh(geometry1, m1)
-	obj.rotation.x = Math.PI/2;
-	obj.position.z = -500 - touch
-	scene.add(obj)
-	// Top half
-	var geometry2 = new THREE.SphereBufferGeometry( radius, 32, 32, 0, Math.PI * 2, 0, angle);
-	var m2 = new THREE.MeshBasicMaterial({color: 0x0000ff})
-	var obj1 = new THREE.Mesh(geometry2, m2)
-	obj1.rotation.x = -Math.PI/2;
-	obj1.position.z = -500 + touch
-	scene.add(obj1)
-	//MERGING
-	// var ballGeo = new THREE.SphereGeometry(10,35,35);
-	// var material = new THREE.MeshPhongMaterial({color: 0xF7FE2E}); 
-	// var ball = new THREE.Mesh(ballGeo, material);
-
-	// var pendulumGeo = new THREE.CylinderGeometry(1, 1, 50, 16);
-	// ball.updateMatrix();
-	// pendulumGeo.merge(ball.geometry, ball.matrix);
-
-	// var pendulum = new THREE.Mesh(pendulumGeo, material);
-	// scene.add(pendulum);
-	// LENSE FORM END
-	
+	// LENSE
 	this.refractSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
 	scene.add( refractSphereCamera );
 
+	// create custom material for the shader
 	var fShader = THREE.FresnelShader;
 
 	refractSphereCamera.renderTarget.texture.mapping = THREE.CubeRefractionMapping;
 	var fresnelUniforms = 
 	{
-		"mRefractionRatio": { type: "f", value: 0 },
-		"mFresnelBias": 	{ type: "f", value: 0 },
-		"mFresnelPower": 	{ type: "f", value: 0 },
-		"mFresnelScale": 	{ type: "f", value: 0 },
+		"mRefractionRatio": { type: "f", value: 1.02 },
+		"mFresnelBias": 	{ type: "f", value: 0.1 },
+		"mFresnelPower": 	{ type: "f", value: 2.0 },
+		"mFresnelScale": 	{ type: "f", value: 1.0 },
 		"tCube": 			{ type: "t", value: refractSphereCamera.renderTarget.texture} //  textureCube }
 	};
-
-	this.refractionMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xffffff, 
-		refractionRatio: 0.6, 
-		reflectivity: 0.9,
-		envMap: this.refractSphereCamera.renderTarget.texture });
-		
-	
-	// create custom material for the shader
 	var customMaterial = new THREE.ShaderMaterial( 
 	{
 	    uniforms: 		fresnelUniforms,
 		vertexShader:   fShader.vertexShader,
 		fragmentShader: fShader.fragmentShader
 	}   );
-	
+
+
+	// REFRACTION
+	this.refractionMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff, 
+		refractionRatio: 0.6, 
+		reflectivity: 0.9,
+		envMap: this.refractSphereCamera.renderTarget.texture });
+		
 	var sphereGeometry = new THREE.SphereGeometry( 100, 64, 32 );
-	this.sphere = new THREE.Mesh( sphereGeometry, refractionMaterial );
+	this.sphere = new THREE.Mesh( sphereGeometry, refractionMaterial);
 	sphere.position.set(0, 50, 100);
-	scene.add(sphere);
+	// scene.add(sphere);
 	refractSphereCamera.position = sphere.position;
+
+	// LENSE FORM
+	var radius = 100
+	var d = 40
+	var angle = Math.acos((radius - d)/radius)
+	var touch = radius - d;
+	// var center = [0, -50, 0]
+
+	var geometry1 = new THREE.SphereBufferGeometry( radius, 32, 32, 0, Math.PI * 2, 0, angle);
+	var m1 = new THREE.MeshBasicMaterial({color: 0xff00ff})
+	obj = new THREE.Mesh(geometry1, customMaterial)
+	obj.rotation.x = Math.PI/2;
+	obj.position.z = 100 - touch;
+	obj.position.y = 50;
+	scene.add(obj)
+
+	var geometry2 = new THREE.SphereBufferGeometry( radius, 32, 32, 0, Math.PI * 2, 0, angle);
+	var m2 = new THREE.MeshBasicMaterial({color: 0x0000ff})
+	obj1 = new THREE.Mesh(geometry2, customMaterial)
+	obj1.rotation.x = -Math.PI/2;
+	obj1.position.z = 100 + touch;
+	obj1.position.y = 50;
+	scene.add(obj1)
 }
 
 function animate() 
@@ -210,7 +175,11 @@ function update()
 function render() 
 {
 	sphere.visible = false;
+	obj.visible = false;
+	obj1.visible = false;
 	refractSphereCamera.update( renderer, scene );
+	obj.visible = true;
+	obj1.visible = true;
 	sphere.visible = true;
 	
 	renderer.render( scene, camera );
